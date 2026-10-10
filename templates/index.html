@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestKu — Edukasi Investasi</title>
+<style>
+  :root{
+    --bg:#0a0e14; --bg2:#0d1219; --card:#111722; --card2:#151d2a;
+    --line:#1e2a3a; --line2:#263449;
+    --txt:#e6edf3; --mut:#8b98a9;
+    --up:#00e676; --down:#ff5252; --gold:#ffd54f; --cyan:#40c4ff;
+    --mono:'JetBrains Mono','Fira Code','Cascadia Code',Consolas,'Courier New',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--txt);
+       min-height:100vh; display:flex; flex-direction:column; align-items:center}
+  /* ticker tape */
+  .ticker{width:100%; background:#070a0f; border-bottom:1px solid var(--line); overflow:hidden;
+          white-space:nowrap; padding:8px 0; position:sticky; top:0; z-index:20}
+  .ticker-track{display:inline-block; animation:tick 40s linear infinite; font-family:var(--mono); font-size:12px}
+  .ticker:hover .ticker-track{animation-play-state:paused}
+  @keyframes tick{from{transform:translateX(0)} to{transform:translateX(-50%)}}
+  .tk{display:inline-block; margin:0 22px}
+  .tk b{color:var(--txt)} .tk .u{color:var(--up)} .tk .d{color:var(--down)}
+  /* layout */
+  .wrap{width:100%; max-width:920px; padding:22px 16px 30px}
+  .tbar{display:flex; align-items:center; gap:8px; padding:11px 16px; background:#0d1219;
+        border-bottom:1px solid var(--line)}
+  .tdots{display:flex; gap:7px}
+  .tdots span{width:12px; height:12px; border-radius:50%}
+  .tdots .r{background:#ff5f57} .tdots .y{background:#febc2e} .tdots .g{background:#28c840}
+  .live{margin-left:auto; display:flex; align-items:center; gap:7px; font-family:var(--mono);
+        font-size:11px; color:var(--up); font-weight:700}
+  .live i{width:8px; height:8px; border-radius:50%; background:var(--up); animation:blink 1.4s infinite}
+  @keyframes blink{50%{opacity:.25}}
+  .term{background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line);
+        border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(0,230,118,.06);
+        display:flex; flex-direction:column; height:calc(100vh - 130px); max-height:840px}
+  /* header */
+  .chead{padding:20px 24px 16px; border-bottom:1px solid var(--line); display:flex;
+         align-items:center; gap:15px; background:radial-gradient(600px 200px at 20% 0%, rgba(0,230,118,.07), transparent 70%)}
+  .logo{width:46px; height:46px; border-radius:13px; background:linear-gradient(135deg,#00c853,#00e676);
+        display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        box-shadow:0 0 24px rgba(0,230,118,.35), inset 0 1px 0 rgba(255,255,255,.3)}
+  .chead .tt{flex:1; min-width:0}
+  .chead h1{font-size:17px; letter-spacing:-.2px}
+  .chead p{font-size:12.5px; color:var(--mut); margin-top:3px; font-family:var(--mono)}
+  /* chat */
+  #chat{flex:1; overflow-y:auto; overflow-x:hidden; padding:22px 24px; display:flex; flex-direction:column; gap:12px}
+  #chat::-webkit-scrollbar{width:8px} #chat::-webkit-scrollbar-thumb{background:var(--line2); border-radius:4px}
+  #chat > *{min-width:0; max-width:100%}
+  .msg{max-width:82%; min-width:0; padding:12px 16px; border-radius:13px; line-height:1.65; font-size:14px;
+       white-space:pre-wrap; word-wrap:break-word; overflow-wrap:break-word; word-break:break-word;
+       animation:pop .18s ease-out}
+  @keyframes pop{from{transform:translateY(6px); opacity:0}}
+  .msg.user{align-self:flex-end; background:linear-gradient(135deg,#00c853,#00e676); color:#04120a;
+            font-weight:500; border-bottom-right-radius:5px; box-shadow:0 4px 16px rgba(0,230,118,.25)}
+  .msg.bot{align-self:flex-start; background:var(--card2); border:1px solid var(--line2);
+           border-bottom-left-radius:5px; color:var(--txt)}
+  .msg.bot b{color:var(--up)} .msg.bot a{color:var(--cyan)}
+  .typing{align-self:flex-start; background:var(--card2); border:1px solid var(--line2);
+          padding:15px 19px; border-radius:13px; border-bottom-left-radius:5px; display:flex; gap:5px}
+  .typing span{width:8px; height:8px; border-radius:50%; background:var(--up); animation:tp 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.15s} .typing span:nth-child(3){animation-delay:.3s}
+  @keyframes tp{40%{transform:translateY(-6px); opacity:1} 0%,80%,100%{opacity:.35}}
+  /* footer input */
+  .cfoot{padding:15px 20px 13px; border-top:1px solid var(--line); background:#0d1219}
+  #chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+  #chips button{padding:7px 14px; border-radius:8px; border:1px solid var(--line2); background:var(--card2);
+                color:var(--cyan); font-size:12px; font-weight:600; font-family:var(--mono); cursor:pointer; transition:.15s}
+  #chips button:hover{border-color:var(--up); color:var(--up); box-shadow:0 0 10px rgba(0,230,118,.2)}
+  .irow{display:flex; gap:10px; align-items:center}
+  #inp{flex:1; padding:13px 16px; border-radius:10px; border:1px solid var(--line2);
+       font-size:14px; outline:none; transition:.15s; background:var(--bg); color:var(--txt); font-family:var(--mono)}
+  #inp:focus{border-color:var(--up); box-shadow:0 0 0 3px rgba(0,230,118,.12)}
+  #send{width:46px; height:46px; min-width:46px; border-radius:50%; border:none; cursor:pointer;
+        background:linear-gradient(135deg,#00c853,#00e676); color:#04120a;
+        display:flex; align-items:center; justify-content:center;
+        box-shadow:0 4px 16px rgba(0,230,118,.3); transition:.15s}
+  #send:hover:not(:disabled){transform:scale(1.06); box-shadow:0 6px 22px rgba(0,230,118,.45)}
+  #send:disabled{opacity:.5; cursor:wait; transform:none}
+  .disclaimer{margin-top:16px; text-align:center; font-size:11px; color:var(--mut); font-family:var(--mono);
+              border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:rgba(255,213,79,.04)}
+  .disclaimer b{color:var(--gold)}
+  /* kartu grafik saham */
+  .gcard{background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--line);
+         border-radius:16px; padding:16px 18px; margin-bottom:16px;
+         box-shadow:0 12px 40px rgba(0,0,0,.4)}
+  .grow{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap}
+  .grow .gt{font-family:var(--mono); font-size:13px; font-weight:700; color:var(--txt)}
+  .grow .gt span{color:var(--up)}
+  #stockSel{flex:1; min-width:160px; padding:9px 11px; border-radius:9px; background:var(--bg);
+            color:var(--txt); border:1px solid var(--line2); font-size:13px; font-weight:600;
+            cursor:pointer; font-family:var(--mono)}
+  .ginfo{display:flex; gap:14px; align-items:baseline; margin-bottom:4px; font-family:var(--mono); flex-wrap:wrap}
+  .ginfo .gp{font-size:20px; font-weight:700}
+  .ginfo .gc{font-size:13px; font-weight:700}
+  .ginfo .gc.u{color:var(--up)} .ginfo .gc.d{color:var(--down)}
+  .ginfo .gs{font-size:11px; color:var(--mut)}
+  .gohlc{display:flex; gap:16px; margin-bottom:8px; font-family:var(--mono); font-size:11px; color:var(--mut); flex-wrap:wrap}
+  .gohlc b{color:var(--txt); font-weight:700}
+  .gper{display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap}
+  .gper button{padding:6px 12px; border-radius:7px; border:1px solid var(--line2); background:var(--card2);
+               color:var(--mut); font-size:11px; font-weight:700; font-family:var(--mono); cursor:pointer; transition:.15s}
+  .gper button.on{border-color:var(--up); color:var(--up); background:rgba(0,230,118,.08)}
+  .gper button:hover{border-color:var(--up); color:var(--up)}
+  #chart{width:100%; height:260px; display:block; cursor:crosshair; touch-action:pan-y}
+  .gwrap{position:relative}
+  #gtip{position:absolute; display:none; z-index:5; pointer-events:none;
+        background:rgba(13,18,25,.96); border:1px solid var(--line2); border-radius:10px;
+        padding:10px 12px; font-family:var(--mono); font-size:11px; line-height:1.7;
+        box-shadow:0 8px 24px rgba(0,0,0,.5); white-space:nowrap}
+  #gtip .td{color:var(--mut); font-size:10px; margin-bottom:2px}
+  #gtip b{color:var(--txt)}
+  #gtip .up{color:var(--up)} #gtip .dn{color:var(--down)}
+  .glegend{display:flex; gap:14px; margin-top:6px; font-family:var(--mono); font-size:10.5px; color:var(--mut)}
+  .glegend i{display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
+  /* responsif */
+  @media(max-width:900px){
+    .wrap{max-width:100%}
+    .term{height:calc(100dvh - 120px)}
+  }
+  @media(max-width:640px){
+    body{font-size:14px}
+    .tbar{padding:9px 12px}
+    .ticker-track{font-size:11px} .tk{margin:0 14px}
+    .wrap{padding:14px 10px 18px; max-width:100%}
+    .term{border-radius:14px; height:calc(100dvh - 110px); max-height:none; overflow:hidden}
+    .chead{padding:13px 15px 11px; gap:10px}
+    .logo{width:36px; height:36px; border-radius:10px}
+    .chead h1{font-size:14.5px; line-height:1.3}
+    .chead p{font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    #chat{padding:15px 13px; gap:11px}
+    .msg{max-width:94%; font-size:15px; padding:13px 15px; line-height:1.7; border-radius:14px}
+    .cfoot{padding:11px 13px 9px}
+    #chips{display:flex; flex-wrap:nowrap; overflow-x:auto; gap:7px; margin-bottom:10px; padding-bottom:2px}
+    #chips button{flex-shrink:0; font-size:11px; padding:7px 12px}
+    #chips::-webkit-scrollbar{display:none}
+    #inp{font-size:13px; padding:12px 13px}
+    #send{width:44px; height:44px; min-width:44px}
+      .disclaimer{display:none}
+    .modal{border-radius:14px}
+  }
+  @media(max-width:380px){
+    .chead h1{font-size:13px}
+  }
+  @media(min-width:1400px){
+    .wrap{max-width:1020px}
+    .term{max-height:900px}
+  }
+</style>
+</head>
+<body>
+<div class="ticker"><div class="ticker-track" id="ticker"></div></div>
+<div class="wrap">
+  <div class="gcard">
+    <div class="grow">
+      <div class="gt">Grafik Saham <span>Indonesia</span></div>
+      <select id="stockSel"><option>memuat...</option></select>
+    </div>
+    <div class="ginfo">
+      <span class="gp" id="gprice">-</span>
+      <span class="gc" id="gchg"></span>
+      <span class="gs" id="gsym"></span>
+    </div>
+    <div class="gohlc" id="gohlc" style="display:none">
+      <span>Buka <b id="oB">-</b></span><span>Tertinggi <b id="oH">-</b></span>
+      <span>Terendah <b id="oL">-</b></span><span>Volume <b id="oV">-</b></span>
+    </div>
+    <div class="gper" id="gper">
+      <button data-p="1d">1D</button><button data-p="5d">5D</button>
+      <button data-p="1mo" class="on">1M</button><button data-p="3mo">3M</button>
+      <button data-p="6mo">6M</button><button data-p="1y">1Y</button>
+    </div>
+    <div class="gwrap">
+      <canvas id="chart"></canvas>
+      <div id="gtip"></div>
+    </div>
+    <div class="glegend">
+      <span><i style="background:#ffd54f"></i>MA5</span>
+      <span><i style="background:#40c4ff"></i>MA20</span>
+      <span><i style="background:#00e676"></i>Naik</span>
+      <span><i style="background:#ff5252"></i>Turun</span>
+    </div>
+  </div>
+  <div class="term">
+    <div class="tbar">
+      <div class="tdots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <span class="live"><i></i>LIVE · EDUKASI</span>
+    </div>
+    <div class="chead">
+      <div class="logo"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#04120a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+      <div class="tt">
+        <h1>InvestKu</h1>
+        <p>Asisten edukasi investasi</p>
+      </div>
+    </div>
+    <div id="chat"></div>
+    <div class="cfoot">
+      <div id="chips"></div>
+      <div class="irow">
+        <input id="inp" placeholder="Mau tanya apa hari ini?" autocomplete="off">
+        <button id="send" title="Kirim" aria-label="Kirim pesan"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="disclaimer">⚠ <b>Bukan saran finansial.</b> InvestKu adalah bot edukasi — selalu lakukan riset mandiri sebelum berinvestasi.</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const chat = $('#chat'), inp = $('#inp'), sendBtn = $('#send');
+// grafik candlestick
+let GPER = '1mo', GSIM = null, GDATA = null, GJ = null;
+let VIEW = null; // {s, e} indeks window tampil
+function hideTip(){ document.getElementById('gtip').style.display = 'none'; }
+function resetView(){ if (GDATA) VIEW = {s: 0, e: GDATA.n - 1}; }
+function redraw(){ if (GJ) drawCandle(GJ); }
+function drawCandle(j){
+  const cv = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = 260, VH = 52;
+  const CH = H - VH - 8;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const c = cv.getContext('2d');
+  c.scale(dpr, dpr);
+  c.clearRect(0, 0, W, H);
+  const pts = j.points, n = pts.length;
+  if (!n) return;
+  GJ = j;
+  if (!VIEW || VIEW.e >= n || VIEW.s < 0) VIEW = {s: 0, e: n - 1};
+  const vs = VIEW.s, ve = Math.min(VIEW.e, n - 1);
+  const idx = []; for (let i = vs; i <= ve; i++) idx.push(i);
+  const vn = idx.length;
+  const RW = 52; // label harga di kanan
+  const PW = W - RW;
+  let lo = Infinity, hi = -Infinity, vmax = 0;
+  idx.forEach(i => { const p = pts[i]; lo = Math.min(lo, p.l); hi = Math.max(hi, p.h); vmax = Math.max(vmax, p.v); });
+  const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
+  const X = vi => 6 + (vi / Math.max(vn - 1, 1)) * (PW - 14);
+  const Y = v => 6 + (1 - (v - lo) / (hi - lo)) * (CH - 14);
+  GDATA = {pts, n, X, Y, lo, hi, CH, PW, W, vs, vn, idx};
+  const step = Math.max(1, Math.floor(n / Math.floor(PW / 9)));
+  const bw = Math.max(2, Math.min(14, (PW / vn) * 0.62));
+  // garis bantu
+  c.strokeStyle = 'rgba(139,152,169,.12)'; c.lineWidth = 1;
+  c.fillStyle = '#8b98a9'; c.font = '10px monospace'; c.textAlign = 'left';
+  for (let g = 0; g <= 4; g++){
+    const v = lo + (hi - lo) * g / 4, y = Y(v);
+    c.beginPath(); c.moveTo(0, y); c.lineTo(PW, y); c.stroke();
+    c.fillText(v.toLocaleString('id-ID'), PW + 6, y + 3);
+  }
+  // bar volume
+  const VY = v => CH + 8 + (1 - v / (vmax || 1)) * (VH - 10);
+  idx.forEach((di, vi) => {
+    const p = pts[di];
+    const up = p.c >= p.o;
+    c.fillStyle = up ? 'rgba(0,230,118,.35)' : 'rgba(255,82,82,.35)';
+    const x = X(vi) - bw / 2;
+    c.fillRect(x, VY(p.v), bw, CH + 8 + VH - 10 - VY(p.v));
+  });
+  // candle
+  idx.forEach((di, vi) => {
+    const p = pts[di];
+    const up = p.c >= p.o;
+    const col = up ? '#00e676' : '#ff5252';
+    const x = X(vi);
+    c.strokeStyle = col; c.lineWidth = Math.max(1, bw * 0.18);
+    c.beginPath(); c.moveTo(x, Y(p.h)); c.lineTo(x, Y(p.l)); c.stroke();
+    c.fillStyle = col;
+    const yO = Y(p.o), yC = Y(p.c);
+    const top = Math.min(yO, yC), hh = Math.max(1.5, Math.abs(yC - yO));
+    c.fillRect(x - bw / 2, top, bw, hh);
+  });
+  // garis MA5/MA20
+  const maLine = (arr, col) => {
+    c.beginPath(); let started = false;
+    idx.forEach((di, vi) => {
+      const v = arr[di];
+      if (v == null) return;
+      const x = X(vi), y = Y(v);
+      started ? c.lineTo(x, y) : c.moveTo(x, y);
+      started = true;
+    });
+    c.strokeStyle = col; c.lineWidth = 1.4; c.stroke();
+  };
+  if (j.ma5) maLine(j.ma5, '#ffd54f');
+  if (j.ma20) maLine(j.ma20, '#40c4ff');
+  // tanggal di bawah
+  c.fillStyle = '#8b98a9'; c.textAlign = 'center';
+  const nl = Math.min(5, vn);
+  for (let k = 0; k < nl; k++){
+    const vi = Math.round(k * (vn - 1) / (nl - 1));
+    c.fillText(pts[idx[vi]].d, Math.min(Math.max(X(vi), 24), PW - 24), H - 2);
+  }
+  c.textAlign = 'left';
+}
+function fmtVol(v){
+  if (v >= 1e9) return (v/1e9).toFixed(1) + ' M';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + ' jt';
+  if (v >= 1e3) return (v/1e3).toFixed(0) + ' rb';
+  return '' + v;
+}
+async function loadChart(sym){
+  GSIM = sym; VIEW = null;
+  document.getElementById('gprice').textContent = '...';
+  document.getElementById('gchg').textContent = '';
+  document.getElementById('gohlc').style.display = 'none';
+  hideTip();
+  try {
+    const r = await fetch('/api/chart/' + encodeURIComponent(sym) + '?p=' + GPER);
+    const j = await r.json();
+    if (!j.points) throw 0;
+    drawCandle(j);
+    document.getElementById('gprice').textContent =
+      (sym === 'IHSG' ? '' : 'Rp') + j.last.toLocaleString('id-ID');
+    const gc = document.getElementById('gchg');
+    gc.textContent = (j.change >= 0 ? '+' : '') + j.change + '%';
+    gc.className = 'gc ' + (j.change >= 0 ? 'u' : 'd');
+    document.getElementById('gsym').textContent = j.symbol === '^JKSE' ? 'IHSG' : j.symbol;
+    document.getElementById('oB').textContent = j.open.toLocaleString('id-ID');
+    document.getElementById('oH').textContent = j.high.toLocaleString('id-ID');
+    document.getElementById('oL').textContent = j.low.toLocaleString('id-ID');
+    document.getElementById('oV').textContent = fmtVol(j.vol);
+    document.getElementById('gohlc').style.display = 'flex';
+  } catch(e){
+    document.getElementById('gprice').textContent = 'gagal memuat';
+  }
+}
+(function(){
+  const cv = document.getElementById('chart');
+  const tip = document.getElementById('gtip');
+
+  // state gestur
+  let dragX = null, pinchD = 0, moved = false;
+  let mdown = false, mx = 0;
+
+  // tap: tampilkan detail candle
+  function showTip(clientX, clientY){
+    if (!GDATA || !GDATA.n) return;
+    const r = cv.getBoundingClientRect();
+    const x = clientX - r.left, y = clientY - r.top;
+    const {pts, X, idx, vn} = GDATA;
+    let best = 0, bd = 1e9;
+    for (let vi = 0; vi < vn; vi++){
+      const d = Math.abs(X(vi) - x);
+      if (d < bd){ bd = d; best = vi; }
+    }
+    if (bd > 34){ hideTip(); return; }
+    const p = pts[idx[best]];
+    const chg = ((p.c - p.o) / p.o * 100).toFixed(2);
+    const cls = p.c >= p.o ? 'up' : 'dn';
+    tip.innerHTML =
+      '<div class="td">' + p.d + '</div>' +
+      'Buka <b>' + p.o.toLocaleString('id-ID') + '</b><br>' +
+      'Tertinggi <b>' + p.h.toLocaleString('id-ID') + '</b><br>' +
+      'Terendah <b>' + p.l.toLocaleString('id-ID') + '</b><br>' +
+      'Tutup <b>' + p.c.toLocaleString('id-ID') + '</b> ' +
+      '<span class="' + cls + '">' + (chg >= 0 ? '+' : '') + chg + '%</span><br>' +
+      'Vol <b>' + fmtVol(p.v) + '</b>';
+    tip.style.display = 'block';
+    let lx = x + 14, ly = y - tip.offsetHeight - 10;
+    if (lx + tip.offsetWidth > r.width) lx = x - tip.offsetWidth - 14;
+    if (ly < 0) ly = y + 14;
+    tip.style.left = lx + 'px';
+    tip.style.top = ly + 'px';
+  }
+
+  // geser kiri-kanan buat pan
+  function panBy(px){
+    if (!GDATA) return;
+    const {PW, vn, n} = GDATA;
+    const shift = Math.round(px * (vn / PW));
+    if (!shift) return;
+    const w = VIEW.e - VIEW.s;
+    const ns = Math.max(0, Math.min(n - 1 - w, VIEW.s - shift));
+    if (ns !== VIEW.s){
+      VIEW.s = ns; VIEW.e = ns + w;
+      moved = true; hideTip(); redraw();
+    }
+  }
+
+  // cubit buat zoom
+  function zoomBy(f){
+    if (!GDATA) return;
+    const n = GDATA.n;
+    const mid = (VIEW.s + VIEW.e) / 2;
+    const w = Math.max(10, Math.min(n, Math.round((VIEW.e - VIEW.s + 1) * f)));
+    const ns = Math.max(0, Math.min(n - w, Math.round(mid - w / 2)));
+    if (w !== VIEW.e - VIEW.s + 1){
+      VIEW.s = ns; VIEW.e = ns + w - 1;
+      moved = true; hideTip(); redraw();
+    }
+  }
+
+  cv.addEventListener('click', e => showTip(e.clientX, e.clientY));
+
+  cv.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) dragX = e.touches[0].clientX;
+    if (e.touches.length === 2)
+      pinchD = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                           e.touches[0].clientY - e.touches[1].clientY);
+  }, {passive: true});
+
+  cv.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && dragX != null){
+      const dx = e.touches[0].clientX - dragX;
+      if (Math.abs(dx) > 4){ panBy(dx); dragX = e.touches[0].clientX; }
+    } else if (e.touches.length === 2){
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                           e.touches[0].clientY - e.touches[1].clientY);
+      if (pinchD > 0 && Math.abs(d - pinchD) > 6){ zoomBy(pinchD / d); pinchD = d; }
+    }
+  }, {passive: true});
+
+  cv.addEventListener('touchend', e => {
+    if (e.changedTouches.length && !moved){
+      const t = e.changedTouches[0];
+      showTip(t.clientX, t.clientY);
+    }
+    moved = false;
+    dragX = e.touches.length ? e.touches[0].clientX : null;
+    if (!e.touches.length) pinchD = 0;
+  }, {passive: true});
+
+  // drag pakai mouse (desktop)
+  cv.addEventListener('mousedown', e => { mdown = true; mx = e.clientX; moved = false; });
+  window.addEventListener('mousemove', e => {
+    if (!mdown) return;
+    const dx = e.clientX - mx;
+    if (Math.abs(dx) > 4){ panBy(dx); mx = e.clientX; }
+  });
+  window.addEventListener('mouseup', e => {
+    if (mdown && !moved) showTip(e.clientX, e.clientY);
+    mdown = false; moved = false;
+  });
+})();
+document.getElementById('gper').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#gper button').forEach(x => x.classList.remove('on'));
+  e.target.classList.add('on');
+  GPER = e.target.dataset.p;
+  if (GSIM) loadChart(GSIM);
+});
+(async function(){
+  try {
+    const r = await fetch('/api/stocks');
+    const j = await r.json();
+    const sel = document.getElementById('stockSel');
+    sel.innerHTML = j.stocks.map(o => {
+      const v = o.s === '^JKSE' ? 'IHSG' : o.s;
+      const lbl = o.s === '^JKSE' ? 'IHSG' : o.s;
+      return `<option value="${v}">${lbl} — ${o.n}</option>`;
+    }).join('');
+    sel.onchange = () => loadChart(sel.value);
+    loadChart(sel.value);
+  } catch(e){
+    document.getElementById('stockSel').innerHTML = '<option>gagal memuat</option>';
+  }
+})();
+let rsz;
+window.addEventListener('resize', () => {
+  clearTimeout(rsz);
+  rsz = setTimeout(() => { if (GSIM) loadChart(GSIM); }, 250);
+});
+// ticker berjalan
+function renderTicker(stocks){
+  const tk = stocks.map(({s,p,c}) => {
+    const cls = c >= 0 ? 'u' : 'd', sign = c >= 0 ? '+' : '';
+    return `<span class="tk"><b>${s}</b> ${p.toLocaleString('id-ID')} <span class="${cls}">${sign}${c}%</span></span>`;
+  }).join('');
+  $('#ticker').innerHTML = tk + tk;
+}
+(async function(){
+  try {
+    const r = await fetch('/api/ticker');
+    const j = await r.json();
+    if (j.stocks && j.stocks.length) { renderTicker(j.stocks); return; }
+  } catch(e){}
+  // kalau API mati pakai angka cadangan
+  renderTicker([
+    {s:"BBCA",p:9850,c:1.2},{s:"BBRI",p:4250,c:0.8},{s:"TLKM",p:3120,c:-0.5},
+    {s:"ASII",p:5120,c:1.8},{s:"UNVR",p:2890,c:-1.1},{s:"INDF",p:6750,c:0.4}
+  ]);
+})();
+const SUGGEST = [
+  "Apa itu investasi?",
+  "Reksadana vs deposito, mana yang cocok?",
+  "Apa itu risiko investasi?",
+  "Apa itu diversifikasi portofolio?",
+  "Apa ciri investasi bodong?"
+];
+SUGGEST.forEach(t => {
+  const b = document.createElement('button');
+  b.textContent = t;
+  b.onclick = () => { inp.value = t; send(); };
+  $('#chips').appendChild(b);
+});
+function md(t){
+  return t.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>')
+          .replace(/(^|\n)_([^_\n]+)_/g, '$1<i>$2</i>')
+          .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+}
+function addMsg(html, who){
+  const d = document.createElement('div');
+  d.className = 'msg ' + who;
+  d.innerHTML = who === 'bot' ? md(html)
+    : html.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+function getHist(){
+  try { return JSON.parse(localStorage.getItem('investku_hist') || '[]'); } catch(e){ return []; }
+}
+function saveHist(h){
+  try { localStorage.setItem('investku_hist', JSON.stringify(h.slice(-20))); } catch(e){}
+}
+async function send(){
+  const text = inp.value.trim();
+  if (!text) return;
+  addMsg(text, 'user');
+  inp.value = '';
+  const tp = document.createElement('div');
+  tp.className = 'typing'; tp.innerHTML = '<span></span><span></span><span></span>';
+  chat.appendChild(tp); chat.scrollTop = chat.scrollHeight;
+  sendBtn.disabled = true;
+  const hist = getHist();
+  hist.push({role:'user', content:text});
+  try {
+    const r = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        message:text,
+        history:hist.slice(-10)
+      })
+    });
+    const j = await r.json();
+    tp.remove();
+    addMsg(j.answer || 'Maaf, terjadi kesalahan.', 'bot');
+    hist.push({role:'assistant', content:j.answer || ''});
+    saveHist(hist);
+  } catch(e){
+    tp.remove();
+    addMsg('⚠ koneksi ke server gagal. coba lagi.', 'bot');
+    saveHist(hist);
+  }
+  sendBtn.disabled = false;
+}
+sendBtn.onclick = send;
+inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+function greet(){
+  addMsg("**Halo, selamat datang di InvestKu!**\n\nMau belajar investasi tapi bingung mulai dari mana? Saya siap bantu jawab \u2014 dari pengertian dasar sampai strategi sederhana yang bisa langsung dipahami.\n\nApa yang ingin kamu pelajari hari ini?", 'bot');
+  chat.scrollTop = 0;
+}
+greet();
+</script>
+</body>
+</html>
